@@ -1,0 +1,76 @@
+@theme {
+  --font-sans: 'Manrope', system-ui, -apple-system, sans-serif;
+
+  --color-b24-green: #2fc06e;
+  --color-b24-green-hover: #28a85f;
+  --color-b24-cyan: #2fc6f6;
+  --color-b24-cyan-deep: #1ea8d4;
+  --color-b24-buy: #9dcf00;
+
+  --color-b24-bg-deep: #1a1545;
+  --color-b24-bg-mid: #2a2267;
+  --color-b24-bg-glow: #4a3a9a;
+
+  --color-b24-sidebar: rgba(18, 14, 48, 0.42);
+  --color-b24-sidebar-hover: rgba(255, 255, 255, 0.1);
+  --color-b24-sidebar-active: rgba(255, 255, 255, 0.16);
+
+  --color-b24-panel: rgba(255, 255, 255, 0.94);
+  --color-b24-panel-header: rgba(248, 249, 251, 0.95);
+  --color-b24-text: #525c69;
+  --color-b24-text-dark: #333333;
+  --color-b24-text-muted: #a8adb4;
+  --color-b24-border: rgba(0, 0, 0, 0.06);
+
+  --color-b24-white: #ffffff;
+  --color-b24-white-soft: rgba(255, 255, 255, 0.72);
+  --color-b24-white-mute: rgba(255, 255, 255, 0.45);
+  --color-b24-glass: rgba(255, 255, 255, 0.12);
+  --color-b24-glass-strong: rgba(255, 255, 255, 0.18);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-b24: 14px;
+  --radius-b24-sm: 8px;
+  --radius-b24-pill: 999px;
+
+  --sidebar-width: 240px;
+
+  /* shadcn tokens → mapped to b24 (chat / future primitives) */
+  --radius: 0.5rem;
+  --background: #ffffff;
+  --foreground: #333333;
+  --card: #ffffff;
+  --card-foreground: #333333;
+  --popover: #ffffff;
+  --popover-foreground: #333333;
+  --primary: #2fc06e;
+  --primary-foreground: #ffffff;
+  --secondary: #f5f7f9;
+  --secondary-foreground: #333333;
+  --muted: #f5f7f9;
+  --muted-foreground: #a8adb4;
+  --accent: #e8f8fe;
+  --accent-foreground: #1ea8d4;
+  --destructive: #e5484d;
+  --border: rgba(0, 0, 0, 0.08);
+  --input: rgba(0, 0, 0, 0.1);
+  --ring: #2fc6f6;
+}

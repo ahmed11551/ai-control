@@ -1,0 +1,235 @@
+# Host ~32 GB RAM. CPU limits NOT set — containers use all host cores.
+# Light:  docker compose up -d
+# Full:   docker compose --profile full up -d
+# Telephony: docker compose --profile telephony up -d asterisk
+
+networks:
+  crm:
+    driver: bridge
+
+volumes:
+  pg-data:
+  redis-data:
+  es-data:
+  rabbitmq-data:
+  minio-data:
+  backend-data:
+  asterisk-recordings:
+
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    restart: unless-stopped
+    mem_limit: 8g
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d:ro
+    networks: [crm]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 8s
+      timeout: 5s
+      retries: 12
+    command:
+      - postgres
+      - -c
+      - shared_buffers=2GB
+      - -c
+      - effective_cache_size=6GB
+      - -c
+      - max_connections=150
+      - -c
+      - work_mem=32MB
+    deploy:
+      resources:
+        limits:
+          memory: 8g
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    mem_limit: 512m
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "384mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redis-data:/data
+    networks: [crm]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 8
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  minio:
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    restart: unless-stopped
+    mem_limit: 1g
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    networks: [crm]
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_started
+    networks: [crm]
+    entrypoint: >
+      /bin/sh -c "
+      sleep 4;
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
+      mc mb -p local/$${S3_BUCKET} || true;
+      mc anonymous set none local/$${S3_BUCKET};
+      exit 0;
+      "
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET}
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    mem_limit: 4g
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT: http://minio:9000
+      SKIP_AMI: ${SKIP_AMI:-1}
+      AI_CONTROL_URL: ${AI_CONTROL_URL:-http://host.docker.internal:8091}
+      AI_CONTROL_TOKEN: ${AI_CONTROL_TOKEN:-local-test-token}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - backend-data:/app/data
+      # Secure Vox recordings — host file (не в git):
+      #   ~/crm/voximplant-service-account.json
+      - ./voximplant-service-account.json:/app/voximplant-service-account.json:ro
+    networks: [crm]
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    restart: unless-stopped
+    mem_limit: 256m
+    depends_on: [backend]
+    networks: [crm]
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    mem_limit: 256m
+    volumes:
+      - ${NGINX_CONF:-./nginx/nginx.local.conf}:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    ports:
+      - "${CRM_HTTP_PORT:-8083}:80"
+      - "${CRM_HTTPS_PORT:-8443}:443"
+    depends_on: [backend, frontend]
+    networks: [crm]
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+  elasticsearch:
+    profiles: ["full"]
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    restart: unless-stopped
+    mem_limit: 4g
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.ml.enabled=false
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    networks: [crm]
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+
+  rabbitmq:
+    profiles: ["full"]
+    image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
+    mem_limit: 1g
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      - "127.0.0.1:15672:15672"
+    networks: [crm]
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  asterisk:
+    profiles: ["telephony"]
+    image: andrius/asterisk:18
+    restart: unless-stopped
+    mem_limit: 1g
+    network_mode: host
+    volumes:
+      - ./asterisk/pjsip.conf:/etc/asterisk/pjsip.conf:ro
+      - ./asterisk/extensions.conf:/etc/asterisk/extensions.conf:ro
+      - ./asterisk/extensions_custom.conf:/etc/asterisk/extensions_custom.conf:ro
+      - ./asterisk/manager.conf:/etc/asterisk/manager.conf:ro
+      - ./asterisk/http.conf:/etc/asterisk/http.conf:ro
+      - ./asterisk/ari.conf:/etc/asterisk/ari.conf:ro
+      - ./asterisk/queues.conf:/etc/asterisk/queues.conf:ro
+      - ./asterisk/modules.conf:/etc/asterisk/modules.conf:ro
+      - ./asterisk/rtp.conf:/etc/asterisk/rtp.conf:ro
+      - asterisk-recordings:/var/spool/asterisk/monitor
+    environment:
+      AMI_USER: ${AMI_USER}
+      AMI_SECRET: ${AMI_SECRET}
+    deploy:
+      resources:
+        limits:
+          memory: 1g

@@ -1,0 +1,20 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>AI Control Local</title>
+<style>body{font:15px system-ui;max-width:900px;margin:2rem auto;padding:0 1rem;background:#f7f7f8;color:#222}input,button{padding:.6rem;margin:.25rem 0}label{display:block;margin-top:.5rem}.muted{color:#666}pre{white-space:pre-wrap;background:#fff;padding:1rem;border:1px solid #ddd;min-height:180px}</style>
+<h1>AI Control — локальный стенд</h1>
+<p class="muted">Локальный анализ. Токен хранится только в памяти страницы.</p>
+<label>AI_CONTROL_TOKEN <input id="token" type="password"></label>
+<label>Источник <input id="source" value="transcript-local-01"></label>
+<label>Lead ref <input id="lead" value="synthetic-lead-transcript-01"></label>
+<label>Timezone <input id="timezone" value="Europe/Moscow"></label>
+<label>Файл <input id="file" type="file" accept="application/json,.txt,text/plain"></label>
+<button onclick="send()">Загрузить</button> <button onclick="jobs()">Обновить jobs</button>
+<pre id="out">Готово.</pre>
+<script>
+const out=document.querySelector('#out');
+async function api(path,opt={}){opt.headers={...(opt.headers||{}),'X-AI-Token':document.querySelector('#token').value};let r=await fetch(path,opt);let x=await r.json();if(!r.ok)throw x;out.textContent=JSON.stringify(x,null,2);return x}
+async function send(){let f=document.querySelector('#file').files[0];if(!f){out.textContent='Выберите JSON или TXT';return}if(f.size>1048576){out.textContent='Файл больше 1 MiB';return}try{let text=await f.text();let path='/v1/conversations',body=text;if(f.name.toLowerCase().endsWith('.txt')){path='/v1/transcripts';body=JSON.stringify({source_id:document.querySelector('#source').value,source_version:1,lead_ref:document.querySelector('#lead').value,timezone:document.querySelector('#timezone').value,transcript:text})}let job=await api(path,{method:'POST',headers:{'Content-Type':'application/json'},body});await watch(job.job_id)}catch(e){out.textContent=JSON.stringify(e,null,2)}}
+async function watch(id){for(let i=0;i<120;i++){let job=await api('/v1/jobs/'+id);if(job.state==='completed'&&job.analysis_id){let a=await api('/v1/analyses/'+job.analysis_id);out.textContent=JSON.stringify({job,analysis:a},null,2);return}if(job.state==='failed'||job.state==='cancelled'){out.textContent=JSON.stringify(job,null,2);return}await new Promise(r=>setTimeout(r,500))}out.textContent='Ожидание job превысило 60 секунд'}
+function jobs(){api('/v1/jobs').catch(e=>out.textContent=JSON.stringify(e,null,2))}
+</script>

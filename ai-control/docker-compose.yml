@@ -1,0 +1,43 @@
+name: crm-ai-local
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ai_local
+      POSTGRES_PASSWORD: ai_local_change_me
+      POSTGRES_DB: ai_control
+    volumes:
+      - ai-pg-data:/var/lib/postgresql/data
+    networks: [ai-local]
+    mem_limit: 512m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ai_local -d ai_control"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  ai-control:
+    build: .
+    environment:
+      AI_CONTROL_ADDR: 0.0.0.0:8091
+      AI_CONTROL_TOKEN: ${AI_CONTROL_TOKEN:?set AI_CONTROL_TOKEN in ai-control/.env}
+      AI_DATABASE_URL: postgres://ai_local:ai_local_change_me@postgres:5432/ai_control?sslmode=disable
+      AI_MODEL_MODE: ${AI_MODEL_MODE:-mock}
+      AI_LOCAL_MODEL_URL: ${AI_LOCAL_MODEL_URL:-}
+      AI_LOCAL_MODEL_NAME: ${AI_LOCAL_MODEL_NAME:-qwen3:4b}
+    depends_on:
+      postgres: {condition: service_healthy}
+    ports: ["127.0.0.1:8091:8091"]
+    networks: [ai-local]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    mem_limit: 512m
+    cpus: 1.0
+    restart: "no"
+networks:
+  ai-local:
+    name: crm-ai-local-network
+    driver: bridge
+volumes:
+  ai-pg-data:
+    name: crm-ai-local-pg-data

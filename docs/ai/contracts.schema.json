@@ -1,0 +1,1169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:forgecrm:ai:contracts:v1",
+  "title": "CRM AI initial contract catalogue",
+  "description": "Engineering proposal v1.0. Application validation must additionally check scope, evidence references, time ranges, object versions and idempotency. LLM output is AnalysisResult, not a command. Action/communication contracts are intentionally deferred.",
+  "$defs": {
+    "VersionSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pipeline": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "prompt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "policy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "checklist": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "redaction": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "pipeline",
+        "model",
+        "prompt",
+        "policy",
+        "checklist",
+        "schema",
+        "redaction"
+      ]
+    },
+    "EvidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "source_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "segment_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "start_ms": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "end_ms": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "event_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "source_id",
+        "source_version",
+        "segment_id",
+        "start_ms",
+        "end_ms",
+        "event_id"
+      ]
+    },
+    "SubjectRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "lead_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deal_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "call_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "thread_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "task_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "campaign_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "lead_id",
+        "deal_id",
+        "call_id",
+        "thread_id",
+        "task_id",
+        "campaign_id"
+      ]
+    },
+    "EventEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_type": {
+          "type": "string",
+          "enum": [
+            "lead.created",
+            "lead.owner_changed",
+            "lead.stage_changed",
+            "lead.paused",
+            "lead.closed",
+            "deal.updated",
+            "call.started",
+            "call.ended",
+            "call.recording_ready",
+            "call.recording_failed",
+            "transcript.completed",
+            "transcript.failed",
+            "message.received",
+            "message.sent",
+            "message.send_failed",
+            "thread.transferred",
+            "channel.delivery_changed",
+            "task.created",
+            "task.updated",
+            "task.completed",
+            "task.cancelled",
+            "task.reopened",
+            "dialer.attempt_queued",
+            "dialer.attempt_completed",
+            "dialer.claimed",
+            "dialer.disposition_saved",
+            "contact.stop_applied",
+            "logistics.requested",
+            "logistics.stage_changed",
+            "logistics.document_status_changed",
+            "logistics.ticket_status_changed",
+            "analysis.completed",
+            "analysis.failed",
+            "finding.created",
+            "finding.reviewed",
+            "promise.confirmed",
+            "report.generated",
+            "policy.published",
+            "prompt.published",
+            "model.changed",
+            "scope.changed",
+            "ai.mode_changed"
+          ]
+        },
+        "schema_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ingested_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "producer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "correlation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "causation_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "aggregate_type": {
+          "type": "string",
+          "enum": [
+            "lead",
+            "deal",
+            "call",
+            "message",
+            "thread",
+            "task",
+            "campaign",
+            "contact",
+            "logistics",
+            "analysis",
+            "finding",
+            "promise",
+            "report",
+            "policy",
+            "prompt",
+            "model",
+            "scope",
+            "ai_config"
+          ]
+        },
+        "aggregate_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "aggregate_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "department_id_at_event": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "actor_user_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "actor_session_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "data_class": {
+          "type": "string",
+          "enum": [
+            "C0",
+            "C1",
+            "C2",
+            "C3",
+            "C4"
+          ]
+        },
+        "payload_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "payload_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "trace_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "event_id",
+        "event_type",
+        "schema_version",
+        "occurred_at",
+        "ingested_at",
+        "producer",
+        "correlation_id",
+        "causation_id",
+        "aggregate_type",
+        "aggregate_id",
+        "aggregate_version",
+        "department_id_at_event",
+        "actor_user_id",
+        "actor_session_id",
+        "data_class",
+        "payload_ref",
+        "payload_digest",
+        "trace_id"
+      ]
+    },
+    "TranscriptSegment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "segment_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "start_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8000
+        },
+        "channel": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "speaker_role": {
+          "type": "string",
+          "enum": [
+            "manager",
+            "candidate",
+            "ai",
+            "unknown"
+          ]
+        },
+        "role_source": {
+          "type": "string",
+          "enum": [
+            "provider_leg",
+            "manual_verified",
+            "diarization_mapping",
+            "unknown"
+          ]
+        },
+        "asr_confidence": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "segment_id",
+        "start_ms",
+        "end_ms",
+        "text",
+        "channel",
+        "speaker_role",
+        "role_source",
+        "asr_confidence"
+      ]
+    },
+    "ChecklistItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "met",
+            "not_met",
+            "not_applicable",
+            "unknown"
+          ]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EvidenceRef"
+          },
+          "maxItems": 20
+        },
+        "safe_explanation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1500
+        }
+      },
+      "required": [
+        "item_id",
+        "result",
+        "evidence_refs",
+        "safe_explanation"
+      ]
+    },
+    "Signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": [
+            "process",
+            "quality",
+            "privacy",
+            "security",
+            "technical"
+          ]
+        },
+        "rule_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "critical",
+            "high",
+            "medium",
+            "low",
+            "info"
+          ]
+        },
+        "safe_title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "safe_description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 3000
+        },
+        "speaker_role": {
+          "type": "string",
+          "enum": [
+            "manager",
+            "candidate",
+            "ai",
+            "unknown"
+          ]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EvidenceRef"
+          },
+          "maxItems": 20
+        },
+        "uncertainty_reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 20
+        },
+        "confidence_self_reported": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "category",
+        "rule_id",
+        "severity",
+        "safe_title",
+        "safe_description",
+        "speaker_role",
+        "evidence_refs",
+        "uncertainty_reasons",
+        "confidence_self_reported"
+      ]
+    },
+    "ExtractedPromise": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "obligation_type": {
+          "type": "string",
+          "enum": [
+            "callback",
+            "send_information",
+            "check_availability",
+            "request_protected_document",
+            "coordinate_logistics",
+            "clarify_with_customer",
+            "other_approved"
+          ]
+        },
+        "speaker_role": {
+          "type": "string",
+          "enum": [
+            "manager",
+            "candidate",
+            "ai",
+            "unknown"
+          ]
+        },
+        "safe_description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1500
+        },
+        "time_expression": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "condition": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EvidenceRef"
+          },
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "obligation_type",
+        "speaker_role",
+        "safe_description",
+        "time_expression",
+        "condition",
+        "evidence_refs"
+      ]
+    },
+    "AnalysisResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "analysis_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "job_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "source_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "source_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "versions": {
+          "$ref": "#/$defs/VersionSet"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "completed",
+            "partial",
+            "failed",
+            "needs_data"
+          ]
+        },
+        "coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "safe_summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "checklist": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ChecklistItem"
+          },
+          "maxItems": 100
+        },
+        "promises": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ExtractedPromise"
+          },
+          "maxItems": 50
+        },
+        "signals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Signal"
+          },
+          "maxItems": 100
+        },
+        "uncertainty_reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 30
+        },
+        "input_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "output_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "latency_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "analysis_id",
+        "job_id",
+        "source_id",
+        "source_version",
+        "versions",
+        "status",
+        "coverage",
+        "safe_summary",
+        "checklist",
+        "promises",
+        "signals",
+        "uncertainty_reasons",
+        "input_tokens",
+        "output_tokens",
+        "latency_ms"
+      ]
+    },
+    "Finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "finding_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "signal": {
+          "$ref": "#/$defs/Signal"
+        },
+        "subject": {
+          "$ref": "#/$defs/SubjectRef"
+        },
+        "source_event_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "maxItems": 100
+        },
+        "source_object_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "department_id_at_event": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "owner_at_event": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "current_owner": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "due_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "review_state": {
+          "type": "string",
+          "enum": [
+            "new",
+            "triaged",
+            "confirmed",
+            "dismissed",
+            "needs_data",
+            "resolved",
+            "appealed"
+          ]
+        }
+      },
+      "required": [
+        "finding_id",
+        "version",
+        "signal",
+        "subject",
+        "source_event_ids",
+        "source_object_version",
+        "department_id_at_event",
+        "owner_at_event",
+        "current_owner",
+        "created_at",
+        "due_at",
+        "review_state"
+      ]
+    },
+    "Promise": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "promise_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "subject": {
+          "$ref": "#/$defs/SubjectRef"
+        },
+        "extraction": {
+          "$ref": "#/$defs/ExtractedPromise"
+        },
+        "owner_user_id_at_promise": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "current_responsible_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "due_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "timezone": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "due_resolution": {
+          "type": "string",
+          "enum": [
+            "exact",
+            "window",
+            "unknown",
+            "conditional"
+          ]
+        },
+        "due_window_start": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "due_window_end": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "proposed",
+            "confirmed",
+            "due",
+            "fulfilled",
+            "overdue",
+            "cancelled"
+          ]
+        },
+        "review_state": {
+          "type": "string",
+          "enum": [
+            "unreviewed",
+            "verified",
+            "uncertain_date",
+            "disputed"
+          ]
+        },
+        "fulfilled_by_event_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "policy_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "promise_id",
+        "version",
+        "subject",
+        "extraction",
+        "owner_user_id_at_promise",
+        "current_responsible_id",
+        "due_at",
+        "timezone",
+        "due_resolution",
+        "due_window_start",
+        "due_window_end",
+        "state",
+        "review_state",
+        "fulfilled_by_event_id",
+        "created_at",
+        "policy_version"
+      ]
+    },
+    "ReviewRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "expected_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "triaged",
+            "confirmed",
+            "dismissed",
+            "needs_data",
+            "resolved",
+            "appealed"
+          ]
+        },
+        "reason_code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "comment": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 3000
+        }
+      },
+      "required": [
+        "expected_version",
+        "decision",
+        "reason_code",
+        "comment"
+      ]
+    },
+    "PolicyDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "decision_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "allow",
+            "warn",
+            "hold_for_review",
+            "block",
+            "require_protected_channel"
+          ]
+        },
+        "policy_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "matched_rules": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "maxItems": 30
+        },
+        "source_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "expires_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "safe_reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1500
+        }
+      },
+      "required": [
+        "decision_id",
+        "decision",
+        "policy_version",
+        "matched_rules",
+        "source_digest",
+        "expires_at",
+        "safe_reason"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/EventEnvelope"
+    },
+    {
+      "$ref": "#/$defs/TranscriptSegment"
+    },
+    {
+      "$ref": "#/$defs/AnalysisResult"
+    },
+    {
+      "$ref": "#/$defs/Finding"
+    },
+    {
+      "$ref": "#/$defs/Promise"
+    },
+    {
+      "$ref": "#/$defs/ReviewRequest"
+    },
+    {
+      "$ref": "#/$defs/PolicyDecision"
+    }
+  ]
+}

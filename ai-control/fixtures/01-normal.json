@@ -1,0 +1,1 @@
+{"source_id":"fixture-01","source_version":1,"lead_ref":"synthetic-lead-01","timezone":"Europe/Moscow","messages":[{"message_id":"m1","author_role":"manager","occurred_at":"2026-10-05T10:00:00Z","text":"Добрый день, обсудим условия."},{"message_id":"m2","author_role":"candidate","occurred_at":"2026-10-05T10:01:00Z","text":"Да, расскажите подробнее."}]}

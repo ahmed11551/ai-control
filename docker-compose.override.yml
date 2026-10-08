@@ -1,0 +1,11 @@
+# Локальная разработка (Windows/macOS).
+# На Linux VPS этот файл не копировать.
+
+services:
+  backend:
+    environment:
+      SKIP_AMI: "1"
+
+  frontend:
+    ports:
+      - "5173:80"
